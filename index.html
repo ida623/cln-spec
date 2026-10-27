@@ -1,0 +1,1083 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>SASD 規格練習</title>
+<style>
+/* 俐方體 11 號（Cubic 11）：開源的繁體中文像素字體 */
+@font-face {
+  font-family: "Cubic11";
+  src: url("https://cdn.jsdelivr.net/gh/ACh-K/Cubic-11@main/fonts/web/Cubic_11.woff2") format("woff2");
+  font-display: swap;
+}
+/* 固定淺色：楓之谷的天空、木頭與奶油色視窗 */
+:root {
+  color-scheme: light;
+  --sky-top: #8fd3ff; --sky-bottom: #e6f6ff; --cloud: #ffffff;
+  --grass: #7ccf4a; --grass-dark: #4f9a2c; --dirt: #c8915a;
+  --ink: #4a3424; --muted: #8a7260;
+  --wood: #b5763a; --wood-dark: #7a4a20; --wood-light: #f1c98d;
+  --panel: #fffaf0; --panel-2: #fff3dc; --line: #e2c9a4;
+  --orange: #ff9a1f; --orange-2: #ffc154; --orange-dark: #c4600a;
+  --blue: #3b8fd9; --blue-soft: #e4f2ff;
+  --ok: #2f9a3c; --ok-soft: #e4f7dc; --bad: #d8442c; --bad-soft: #ffe6df;
+  --hp: #f04848; --hp-2: #ff8a7a; --exp: #f6c818; --exp-2: #fff07a; --bar-bg: #5a4a3c;
+  --mark: #fff09a; --mark-ink: #8a5a00; --sel: #fff2c4;
+  --code-bg: #fdf6e8;
+}
+* { box-sizing: border-box; }
+html { background: var(--sky-bottom); }
+body {
+  margin: 0; color: var(--ink); font: 16px/1.75 "Cubic11", "PingFang TC", "Noto Sans TC", sans-serif;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 70px 26px at 12% 180px, var(--cloud) 98%, transparent 100%),
+    radial-gradient(ellipse 46px 22px at calc(12% + 50px) 166px, var(--cloud) 98%, transparent 100%),
+    radial-gradient(ellipse 90px 30px at 82% 260px, var(--cloud) 98%, transparent 100%),
+    radial-gradient(ellipse 54px 24px at calc(82% - 60px) 246px, var(--cloud) 98%, transparent 100%),
+    radial-gradient(ellipse 60px 22px at 48% 520px, rgba(255,255,255,.85) 98%, transparent 100%),
+    linear-gradient(var(--sky-top), var(--sky-bottom) 700px);
+  background-attachment: fixed;
+}
+body::after {
+  content: ""; position: fixed; left: 0; right: 0; bottom: 0; height: 18px; z-index: 1; pointer-events: none;
+  background: linear-gradient(var(--grass) 0 8px, var(--dirt) 8px);
+  border-top: 3px solid var(--grass-dark);
+}
+main { font-family: -apple-system, "PingFang TC", "Noto Sans TC", sans-serif; }
+main .win-title, main .go, main .verdict .big { font-family: "Cubic11", "PingFang TC", sans-serif; }
+button { font: inherit; color: inherit; }
+
+.win {
+  background: var(--panel); border: 3px solid var(--wood-dark); border-radius: 10px;
+  box-shadow: inset 0 0 0 2px var(--wood-light), 0 4px 0 rgba(122, 74, 32, .25);
+}
+header {
+  background: linear-gradient(#ffe9b8, #ffd27a); border-bottom: 4px solid var(--wood-dark);
+  box-shadow: inset 0 -3px 0 var(--wood), 0 3px 0 rgba(122, 74, 32, .2); z-index: 20;
+}
+@media (min-width: 760px) { header { position: sticky; top: 0; } }
+.bar { max-width: 1240px; margin: 0 auto; padding: 10px 16px; display: flex; gap: 10px 14px; align-items: center; flex-wrap: wrap; }
+.logo { display: flex; align-items: center; gap: 10px; margin-right: auto; }
+.logo h1 { margin: 0; font-size: 22px; font-weight: normal; color: var(--orange-dark); letter-spacing: 1px;
+  text-shadow: 2px 0 #fff, -2px 0 #fff, 0 2px #fff, 0 -2px #fff, 2px 2px #fff, 3px 3px 0 var(--wood); }
+.logo small { display: block; font-size: 12px; color: var(--wood-dark); }
+svg.leaf { width: 32px; height: 32px; shape-rendering: crispEdges; flex: none; }
+.lf { display: inline-block; width: 16px; height: 16px; flex: none; background: var(--leaf) center / contain no-repeat; image-rendering: pixelated; vertical-align: -2px; }
+.lf.off { filter: grayscale(1); opacity: .35; }
+
+.status { display: flex; align-items: center; gap: 8px; background: #fffaf0; border: 2px solid var(--wood-dark); border-radius: 8px; padding: 4px 10px; }
+.lv { color: var(--orange-dark); font-size: 15px; white-space: nowrap; }
+.gauge { display: flex; align-items: center; gap: 4px; }
+.gauge b { font-weight: normal; font-size: 12px; color: #fff; background: var(--bar-bg); border-radius: 4px; padding: 0 4px; line-height: 16px; }
+.track { width: 110px; height: 14px; background: var(--bar-bg); border-radius: 7px; padding: 2px; position: relative; }
+.fill { height: 100%; border-radius: 5px; transition: width .4s; }
+.fill.hp { background: linear-gradient(var(--hp-2), var(--hp)); }
+.fill.exp { background: linear-gradient(var(--exp-2), var(--exp)); }
+.track span { position: absolute; inset: 0; text-align: center; font-size: 11px; line-height: 14px; color: #fff; text-shadow: 1px 1px 0 #000; }
+.tool { border: 2px solid var(--wood-dark); border-radius: 8px; background: linear-gradient(#ffffff, #e8eef6); color: var(--ink);
+  padding: 2px 10px; cursor: pointer; font-size: 14px; box-shadow: inset 0 -3px 0 rgba(0,0,0,.08); }
+.tool:active, .go:active:not(:disabled) { transform: translateY(2px); }
+
+.win-title { margin: -3px -3px 0; padding: 4px 14px; border-radius: 9px 9px 0 0; color: #fff; font-size: 15px;
+  background: linear-gradient(#e0a060, var(--wood)); border: 3px solid var(--wood-dark); border-bottom-width: 2px;
+  text-shadow: 1px 1px 0 var(--wood-dark); display: flex; align-items: center; gap: 6px; }
+.win-title .lf { width: 18px; height: 18px; filter: drop-shadow(1px 0 #fff) drop-shadow(-1px 0 #fff) drop-shadow(0 1px #fff) drop-shadow(0 -1px #fff); }
+.win-body { padding: 14px 20px 16px; }
+
+.layout { max-width: 1440px; margin: 0 auto; padding: 22px 16px 100px; display: flex; gap: 22px; align-items: flex-start; position: relative; z-index: 2; }
+main { overflow-anchor: none; flex: 1; min-width: 0; overflow-wrap: anywhere; container-type: inline-size; }
+.side { width: 260px; flex: none; position: sticky; top: calc(var(--hh, 0px) + 22px);
+  max-height: calc(100vh - var(--hh, 0px) - 60px); display: flex; flex-direction: column; }
+.side .win-title { justify-content: space-between; }
+.side-close { border: 0; background: transparent; color: #fff; cursor: pointer; font-size: 15px; padding: 0 2px; text-shadow: 1px 1px 0 var(--wood-dark); }
+.side-body { overflow-y: auto; padding: 8px 8px 10px; }
+.group + .group { border-top: 1px dashed var(--line); }
+.exam { width: 100%; white-space: nowrap; display: flex; align-items: center; gap: 6px; border: 0; border-radius: 8px;
+  background: transparent; text-align: left; padding: 6px 8px; cursor: pointer; }
+.exam:hover { background: var(--panel-2); }
+.exam .lf { width: 18px; height: 18px; }
+.exam span:not(.caret) { overflow: hidden; text-overflow: ellipsis; }
+.exam small { margin-left: auto; color: var(--muted); font-size: 12px; }
+.exam .caret { width: 12px; color: var(--wood); font-size: 11px; transition: transform .15s; }
+.group.open .exam .caret { transform: rotate(90deg); }
+.group.current > .exam { color: var(--orange-dark); }
+.parts { display: none; padding: 0 0 6px 22px; }
+.group.open .parts { display: block; }
+.part { width: 100%; display: flex; align-items: center; gap: 6px; border: 2px solid transparent; border-radius: 8px;
+  background: transparent; text-align: left; padding: 3px 8px; cursor: pointer; font-size: 14px; }
+.part:hover { background: var(--panel-2); }
+.part .pn { color: var(--blue); white-space: nowrap; }
+.part .pname { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.part small { margin-left: auto; color: var(--muted); font-size: 12px; white-space: nowrap; }
+.part.done small { color: var(--ok); }
+.part.active { background: var(--sel); border-color: var(--orange); }
+.part.active .pname { color: var(--ink); }
+.menu-btn { border: 2px solid var(--wood-dark); border-radius: 8px; background: linear-gradient(var(--orange-2), var(--orange));
+  color: #fff; text-shadow: 1px 1px 0 var(--orange-dark); padding: 2px 10px; cursor: pointer; font-size: 15px; }
+.menu-btn:active { transform: translateY(2px); }
+.fab { display: none; position: fixed; left: 16px; bottom: 30px; z-index: 5; }
+.backdrop { display: none; }
+body.side-closed .side { display: none; }
+@media (max-width: 899px) {
+  .layout { display: block; z-index: auto; position: static; }
+  main { position: relative; z-index: 2; }
+  body.side-open .fab { display: none; }
+  .side { position: fixed; top: 0; left: 0; bottom: 0; max-height: none; width: min(290px, 85vw); z-index: 40; border-radius: 0 10px 10px 0;
+    transform: translateX(-110%); transition: transform .2s ease-out; }
+  body.side-closed .side { display: flex; }
+  body.side-open .side { transform: none; }
+  body.side-open .backdrop { display: block; position: fixed; inset: 0; z-index: 30; background: rgba(60, 40, 20, .35); }
+  .fab { display: inline-block; }
+}
+.pager { display: flex; justify-content: flex-end; margin-top: 4px; }
+
+.intro { margin-bottom: 24px; font-size: 15px; }
+.intro .win-body { padding: 10px 20px 12px; }
+.intro p { margin: 6px 0; }
+
+.card { margin-bottom: 28px; }
+.set-title { margin: 0; }
+.set-sub { color: var(--muted); font-size: 14px; margin: 0 0 12px; }
+.set-body { display: grid; gap: 22px; grid-template-columns: minmax(0, 1fr); }
+.set-body > * { min-width: 0; }
+@container (min-width: 820px) {
+  .set-body.two { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; }
+  .set-body.two .passages { position: sticky; top: calc(var(--hh, 0px) + 20px); max-height: calc(100vh - var(--hh, 0px) - 50px); overflow: auto; }
+}
+.passages { background: #ffffff; padding: 14px 18px; font-size: 15px; border: 2px solid var(--line); border-radius: 8px; }
+.passages p { margin: 6px 0; }
+.plabel { display: inline-block; font-size: 13px; color: #fff; background: var(--blue); border-radius: 6px; padding: 0 8px; margin: 6px 0 4px; }
+.plabel + * { margin-top: 2px; }
+pre.code { margin: 6px 0 14px; padding: 10px 12px; background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px;
+  font: 13px/1.6 ui-monospace, "SF Mono", Menlo, "PingFang TC", monospace; overflow-x: auto; white-space: pre; }
+code { font: 13px ui-monospace, "SF Mono", Menlo, monospace; background: var(--code-bg); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+pre.code code { border: 0; padding: 0; background: none; }
+.fig img { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; display: block; }
+.fig figcaption { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.fig { margin: 4px 0 12px; }
+
+.q { padding: 4px 0 16px; }
+.q + .q { border-top: 2px dashed var(--line); padding-top: 16px; }
+.qnum { color: var(--orange-dark); margin-right: 6px; }
+.qtext { margin: 0 0 10px; }
+.qtext p { margin: 4px 0; }
+.lvtag { font-size: 12px; background: var(--blue); color: #fff; border-radius: 6px; padding: 0 6px; margin-left: 4px; white-space: nowrap; }
+.lvtag.bug { background: var(--bad); }
+
+.opts { display: grid; gap: 8px; }
+.opt { display: flex; gap: 8px; align-items: center; text-align: left; width: 100%;
+  border: 2px solid var(--line); border-radius: 8px; background: #fff; padding: 6px 12px 6px 8px; cursor: pointer; }
+.opt .cur { width: 16px; height: 16px; flex: none; opacity: 0; }
+.opt .cur .lf { display: block; }
+.opt:hover:not(:disabled) { border-color: var(--orange-2); }
+.opt:hover:not(:disabled) .cur { opacity: .35; }
+.opt .l { min-width: 28px; color: var(--blue); align-self: flex-start; }
+.opt .txt { min-width: 0; }
+.opt.sel { background: var(--sel); border-color: var(--orange); }
+.opt.sel .cur { opacity: 1; animation: sway 1.2s ease-in-out infinite; }
+.opt:disabled { cursor: default; }
+.opt.right { background: var(--ok-soft); border-color: var(--ok); }
+.opt.wrong { background: var(--bad-soft); border-color: var(--bad); }
+.opt .tag { margin-left: auto; font-size: 13px; white-space: nowrap; padding-left: 8px; }
+.opt.right .tag { color: var(--ok); } .opt.wrong .tag { color: var(--bad); }
+@keyframes sway { 0%, 100% { transform: rotate(-12deg); } 50% { transform: rotate(12deg); } }
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes pop { 0% { transform: translateY(6px) scale(.8); opacity: 0; } 60% { transform: translateY(-3px) scale(1.08); opacity: 1; } 100% { transform: none; } }
+
+.actions { display: flex; gap: 12px; align-items: center; margin-top: 18px; flex-wrap: wrap; }
+.go { border: 2px solid var(--orange-dark); border-radius: 10px; background: linear-gradient(#ffd27a, var(--orange) 55%, #f07c00);
+  color: #fff; padding: 5px 20px; cursor: pointer; text-shadow: 1px 1px 0 var(--orange-dark);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,.6), 0 3px 0 var(--orange-dark); }
+.go:disabled { filter: grayscale(1); opacity: .5; cursor: not-allowed; }
+.go.plain { border-color: #6a88a8; background: linear-gradient(#ffffff, #d6e4f2); color: var(--ink); text-shadow: none;
+  box-shadow: inset 0 2px 0 #fff, 0 3px 0 #6a88a8; }
+.hint { font-size: 13px; color: var(--muted); }
+
+.verdict { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 12px 0 4px; font-size: 14px; color: var(--muted); }
+.verdict .big { font-size: 20px; animation: pop .45s ease-out; display: inline-block; }
+.verdict.ok .big { color: #ffae00; text-shadow: 2px 2px 0 var(--orange-dark); }
+.verdict.bad .big { color: #8c7bd8; text-shadow: 2px 2px 0 #3e3080; }
+.explain { position: relative; margin-top: 8px; padding: 12px 16px 22px; font-size: 15px; background: #fff;
+  border: 2px solid var(--wood); border-radius: 10px; box-shadow: inset 0 0 0 2px var(--panel-2); }
+.explain::after { content: "▼"; position: absolute; right: 12px; bottom: 4px; font-size: 11px; color: var(--orange); animation: blink 1s steps(2) infinite; }
+.explain blockquote, .reveal blockquote { margin: 6px 0; padding: 2px 12px; border-left: 3px solid var(--orange-2); color: var(--muted); }
+.explain p, .reveal p { margin: 6px 0; }
+.explain ul, .reveal ul, .passages ul, .intro ul { margin: 4px 0; padding-left: 22px; }
+strong { font-weight: normal; color: var(--orange-dark); }
+details.reveal { margin-top: 22px; padding: 10px 16px; font-size: 15px; border: 2px solid var(--line); border-radius: 10px; background: var(--panel-2); }
+details.reveal summary { cursor: pointer; color: var(--wood-dark); }
+.result { color: var(--ink); }
+.result.perfect { color: var(--orange-dark); }
+table { border-collapse: collapse; margin: 8px 0; font-size: 14px; display: block; overflow-x: auto; max-width: 100%; }
+th, td { border: 1px solid var(--line); padding: 3px 8px; text-align: left; vertical-align: top; }
+th { background: var(--panel-2); font-weight: normal; }
+.mk { background: var(--mark); color: var(--mark-ink); font-size: 12px; border-radius: 4px; padding: 0 4px; margin-right: 2px; }
+.topbtn { position: fixed; right: 16px; bottom: 30px; z-index: 5; }
+@media (max-width: 600px) {
+  .win-body { padding: 12px 14px 14px; }
+  .track { width: 76px; }
+  .logo h1 { font-size: 19px; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <button class="menu-btn" id="menuBtn" title="開合任務清單">☰</button>
+    <div class="logo"><span id="logoLeaf"></span><div><h1>SASD 規格練習</h1><small id="subtitle"></small></div></div>
+    <div class="status">
+      <span class="lv" id="lv">Lv.1</span>
+      <div class="gauge" title="答對率"><b>HP</b><div class="track"><div class="fill hp" id="hpFill"></div><span id="hpText"></span></div></div>
+      <div class="gauge" title="這份規格的作答進度"><b>EXP</b><div class="track"><div class="fill exp" id="expFill"></div><span id="expText"></span></div></div>
+    </div>
+    <button class="tool" id="resetAll" title="清除這份規格的作答紀錄">重來</button>
+  </div>
+</header>
+<div class="layout">
+  <aside class="side win" id="side">
+    <div class="win-title"><span>任務清單</span><button class="side-close" id="sideClose" title="收起">✕</button></div>
+    <nav class="side-body" id="exams"></nav>
+  </aside>
+  <main id="main"></main>
+</div>
+<div class="backdrop" id="backdrop"></div>
+<button class="menu-btn fab" id="fab">☰ 任務</button>
+<button class="tool topbtn" onclick="scrollTo({top:0,behavior:'smooth'})">▲ TOP</button>
+
+<script>
+/* ---------- 小工具：寫題庫用 ---------- */
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+const C = s => `<pre class="code">${esc(s.replace(/^\n/, ""))}</pre>`;           // 程式碼區塊（自動跳脫 < >）
+const L = s => `<div class="plabel">${s}</div>`;                                   // 藍色小標籤
+const T = (head, rows) => "<table><tr>" + head.map(h => `<th>${h}</th>`).join("") + "</tr>"
+  + rows.map(r => "<tr>" + r.map(c => `<td>${c}</td>`).join("") + "</tr>").join("") + "</table>";
+const REPORT_IMG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA2AAAANtCAMAAADB0uhIAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAClUExURcbGxv///8PDw9DQ0EdHR1dXV7W1tZiYmAAAADQ0NOzs7ImJiWlpaREREaenpyMjI93d3Xp6ev//AMPDAImJACMjAEdHAKenAN3dAFtbAGlpANzc3G5ubouLi8LCwg0NDaioqE5OTi0tLVpaADY2AKmpAD4+AFBQACsrABcXABMTABsbAB0dAJGRAICAAEpKAG1tAA4OACYmAHd3ADg4AC4uAAAAAHGmutcAAAA3dFJOU////////////////////////////////////////////////////////////////////////wAQWZ2LAAAACXBIWXMAAA7EAAAOxAGVKw4bAAB/YElEQVR4Xu2d247cuNKsd0FqFatJQaq2xzB8sUBg/b4ZYK7W+7/bjkgmJdWhD7abXWVPfDPu0oGiKCqTQVKU+P+6nRCiFXIwIRry/wZfEEK8P1IwIRoiBROiIVIwIRoiBxOiIXIwIRqiNpgQDZGCCdEQKZgQDZGCCdEQKZgQDZGCCdEQKZgQDZGCCdEQKZgQDZGCCdEQKZgQDZGCCdEQKZgQDZGCCdEQKZgQDZGCCdEQKZgQDZGCCdEQKZgQDZGCCdEQKdgtGH6qWOsfsi+9iX1U4Xl7pGC3IITp0RffQDwkCx3CaOsb9mGMvnjCPuZdH8LucZh9i7gNUrDGdEPs+3jmTn2YsOM52z8+nIbvQrC7FELfnd+uKYS9L24ZQugiHCyGcXvE4fiMXx9D8WHx3kjBWjDEeIRfQUMO/UPETzhxpmEK43i+kXSHhFrgMYQH31AYQ4pDxmbQ+zYHzrefhxwPfb84T+zzI3wyhn5G+M1JsOoR54eH/dajkJriiI/7vSziPZGCtYCGHfddOsbH7nEHaw+LNSe6GxzveM2QGRIOEkLyDdx0gPX3www/PXG7ucvx2PfYCecyamURTocooGCHQ39yEuhaP2eExB7UUn0r2IeQd48d4mPaZBLviBSsCTBx/IWld9CdvDXmx6Gb4X+7+axK1lnHB+zeHGxj43OKe9Otw+qlO0QJx5rCcaAzH31rJYd4CEMf+hzTIYxL7a8P9FVLG5K2HlVWHhNUMKrR9r5IwZrQm4Oh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";
+
+/* =====================================================================
+   題庫：一份規格 = 一個任務；任務底下分關卡（part），關卡裡是題組（set）
+   ===================================================================== */
+const EXAMS = [{
+  id: "rpt007",
+  title: "承作條件通知書",
+  sub: "C007 報表 / C007 查詢 / Q007 查詢",
+  parts: [
+
+/* ---------------- 第 1 關 ---------------- */
+{ key: "1", name: "全局地圖", intro: `
+<p>先別急著看程式碼，把三份規格書的「分工」搞懂：誰接單、誰備料、誰負責排版。</p>
+<p>比喻：把它想成一家便當店。<strong>C007 查詢</strong>是櫃台（收單、檢查單子有沒有填好、把便當交給客人），<strong>Q007 查詢</strong>是廚房（去冰箱拿 7 種食材、切好、配好菜），<strong>jrxml</strong>是便當盒的格子模板，<strong>createPDFFile</strong>是把菜裝進便當盒的動作。</p>`,
+  sets: [{
+    heading: "三支程式各自在做什麼",
+    sub: "對照三份規格書的「系統規格」與「處理邏輯」大標",
+    passage: L("三份規格書") + T(["規格書", "所在 repo", "一句話說明"], [
+      ["LIP-C-CLNREPOTC007<br>承作條件通知書查詢", "lip-svc-cln", "URI <code>/api/approval/rptLoanNotify/query</code>。檢查電文 → 呼叫 Q007 → <code>RptUtilsSpring.createPDFFile()</code> 產檔 → 回傳 InputStream"],
+      ["LIP-B-CQYREPOTQ007<br>承作條件通知書查詢", "lip-svc-cln-query", "URI <code>/approval/rptLoanNotify/query</code>。查 7 張表 → 產製檢核 → 把資料組成報表要的字串 → 回傳 RptPath、Params、Lists"],
+      ["LIP-C-CLNREPOTC007<br>承作條件通知書(報表)", "CLN_ZR_SRC", "報表樣板。<code>LIP-C-CLNREPOTC007.jrxml</code>（主報表）＋ <code>_1</code>、<code>_2</code>、<code>_3</code>（子報表）"]
+    ]) + L("C007 處理邏輯（節錄）") + C(`
+一、檢查電文資料完整性
+二、呼叫【LIP-B-CQYREPOTQ007 承作條件通知書查詢】API
+    傳入 ApplyId，取得下行 RptPath、Params、Lists
+三、CLN_ZR產檔
+    RptUtilsSpring.createPDFFile()
+      RptParam  = @Params
+      RptDetail = @Lists
+      RptPath   = @RptPath
+    取得回傳 InputStream
+四、若上述流程無異常，則回傳 InputStream`),
+    questions: [
+      { level: "★☆☆", text: "前端想要拿到一份「承作條件通知書」PDF，它應該呼叫哪一支 API？",
+        options: ["LIP-B-CQYREPOTQ007（lip-svc-cln-query）", "LIP-C-CLNREPOTC007（lip-svc-cln）", "直接讀 CLN_ZR_SRC 裡的 jrxml", "RptUtilsSpring.createPDFFile()"],
+        answer: "B", explain: `
+<p>C007 才是對外的「櫃台」，它最後回傳的是 <strong>InputStream（PDF 檔案）</strong>。</p>
+<ul><li>(A) Q007 只回傳資料（RptPath、Params、Lists），不會產 PDF，是 C007 在內部呼叫它。</li>
+<li>(C) jrxml 是樣板檔，不是 API。</li>
+<li>(D) createPDFFile 是 C007 內部用的工具方法。</li></ul>` },
+      { level: "★☆☆", text: "整個產出流程的正確順序是？",
+        options: ["jrxml → Q007 → C007", "Q007 → C007 → jrxml → 檢查電文", "C007 檢查電文 → 呼叫 Q007 取資料 → createPDFFile 套 jrxml → 回傳 InputStream", "C007 → 套 jrxml → 呼叫 Q007 補資料"],
+        answer: "C", explain: `
+<p>便當店流程：櫃台先檢查訂單（電文） → 交給廚房備料（Q007） → 裝進便當盒（createPDFFile + jrxml） → 交給客人（InputStream）。</p>
+<p>(D) 錯在順序：樣板要「有資料」才能套，所以一定是先取資料、再套版。</p>` },
+      { level: "★☆☆", text: "Q007 回傳給 C007、讓它可以產報表的三樣東西是？",
+        options: ["RptPath、Params、Lists", "ApplyId、InputStream、jrxml", "RETURNCODE、ApplyId、SysId", "dataMap、checkMap、errMsg"],
+        answer: "A", explain: `
+<p>對照 C007 第三步：<code>RptParam = @Params</code>、<code>RptDetail = @Lists</code>、<code>RptPath = @RptPath</code>。</p>
+<ul><li><strong>RptPath</strong>：報表放哪裡（<code>naspool/cln/TempReport/</code>）</li>
+<li><strong>Params</strong>：只出現一次的欄位（日期、金額、保證人…）</li>
+<li><strong>Lists</strong>：會有很多筆、要「往下長」的清單（利率、違約金、其他條件）</li></ul>` },
+      { level: "★★☆", text: "CLN_ZR_SRC 裡為什麼有 4 個 jrxml 檔（主檔 + _1、_2、_3）？",
+        options: ["分別給 UT、SIT、UAT、PROD 四個環境用", "中文、英文、日文、簡體四種語言", "4 個版本的備份，最新的是 _3", "1 個主報表 + 3 個子報表，子報表專門處理「筆數不固定、要往下長」的清單"],
+        answer: "D", explain: `
+<p>報表規格書寫得很清楚：⑦ 費利率、⑪ 提前清償違約金、⑬ 其他條件都標註「<strong>子報表 …，List 多筆資料往下長</strong>」。</p>
+<p>比喻：主報表是固定格子的表單；子報表像表單裡的「明細欄」，有幾筆就印幾行。主報表吃 Params，子報表吃 Lists。</p>` }
+    ],
+    note: `<p>記住一句話：<strong>C007 = 櫃台（產 PDF）、Q007 = 廚房（備資料）、jrxml = 便當盒（排版）</strong>。</p>`
+  }]
+},
+
+/* ---------------- 第 2 關 ---------------- */
+{ key: "2", name: "電文與錯誤處理", intro: `
+<p>「電文」就是 API 收發的 JSON。上行（Request）是送進來的，下行（Response）是回出去的。<code>MWHEADER</code> 像信封（誰寄的、交易序號、結果代碼），<code>TRANRQ</code>／<code>TRANRS</code> 是信紙內容。</p>`,
+  sets: [{
+    heading: "上行電文與處理結果代碼",
+    sub: "兩支 API 的上行格式一樣，都只收一個業務欄位",
+    passage: L("上行電文（TRANRQ）") + T(["LVL", "欄位", "型態", "長度", "必要", "說明"], [
+      ["2", "MSGID", "String", "20", "Y", ""], ["2", "SOURCECHANNEL", "String", "13", "Y", "來源端系統 AP ID"],
+      ["2", "TXNSEQ", "String", "20", "Y", "交易序號，請於下行電文【TXNSEQ】欄位<strong>原值回傳</strong>"],
+      ["1", "TRANRQ", "", "", "", ""], ["2", "ApplyId", "String", "16", "Y", "受理編號"]
+    ]) + L("處理結果代碼表") + T(["代碼", "訊息"], [["0000", "查詢成功"], ["E001", "資料格式錯誤"], ["9999", "其他系統異常"]])
+      + L("處理邏輯第一步") + C(`
+檢查 input 必填欄位是否為空及是否超過長度限制。
+若發現有必填欄位為空值則回傳下行電文
+RETURNCODE = E001，RETURNDESC = 資料格式錯誤。`)
+      + L("Q007 準備資料（節錄）") + C(`
+查詢 CLN_CASE_MAIN (案件受理檔)
+  where APPLY_ID = 上行.ApplyId
+若查無資料需拋出
+  DataNotFoundException("無該件受理資料，無法作業")`),
+    questions: [
+      { level: "★☆☆", text: "這兩支 API 的上行電文中，唯一的「業務欄位」是哪一個？",
+        options: ["APPLY_FORM", "BORROW_ID", "TXNSEQ", "ApplyId（受理編號）"],
+        answer: "D", explain: `<p>TRANRQ 底下只有 <code>ApplyId</code>（String、16 碼、必填）。後面查的 7 張表全部用 <code>APPLY_ID = 上行.ApplyId</code> 當條件。一張受理編號就能把整件貸款的資料撈出來。</p>` },
+      { level: "★☆☆", text: "呼叫端把 ApplyId 傳成空字串 \"\"，會收到什麼？",
+        options: ["RETURNCODE = 0000，回傳一份空白報表", "RETURNCODE = 9999，其他系統異常", "RETURNCODE = E001，資料格式錯誤", "拋出 DataNotFoundException"],
+        answer: "C", explain: `<p>第一步「檢查電文資料完整性」就擋下來了：必填欄位為空 → <code>E001</code>。這時候根本還沒去查資料庫，所以不會是 (D)。</p><p>比喻：櫃台看到訂單沒寫名字，直接退單，不會進廚房。</p>` },
+      { level: "★★☆", text: "ApplyId 傳了 20 碼的字串，結果會是？",
+        options: ["自動截成前 16 碼繼續查詢", "RETURNCODE = E001", "照樣查詢，查得到就回 0000", "拋出 DataNotFoundException"],
+        answer: "B", explain: `<p>規格寫的是「檢查必填欄位是否為空<strong>及是否超過長度限制</strong>」。ApplyId 最大長度 16，超過一樣是資料格式錯誤 E001。</p>
+<blockquote>小提醒：規格書後半句只寫「若必填欄位為空值則回 E001」，沒有明寫「超長」要回什麼。實作時通常一起當 E001 處理，有疑問可以跟 SA 確認。</blockquote>` },
+      { level: "★☆☆", text: "下行電文的 TXNSEQ 應該怎麼填？",
+        options: ["把上行傳進來的 TXNSEQ 原值回傳", "系統自己產生一個新的交易序號", "固定帶空字串", "填入 ApplyId"],
+        answer: "A", explain: `<p>規格：「請於下行電文【TXNSEQ】欄位<strong>原值回傳</strong>」。</p><p>比喻：像餐廳的取餐號碼牌，你拿幾號進來、就用幾號叫你，呼叫端才能把回應對回自己發出的那一筆請求。</p>` },
+      { level: "★★☆", text: "ApplyId 格式正確，但 CLN_CASE_MAIN 查不到這件案子，Q007 會？",
+        options: ["回 E001 資料格式錯誤", "拋出 DataNotFoundException(\"無該件受理資料，無法作業\")", "繼續往下做，產出欄位全空的報表", "回 0000，但 Params 為空陣列"],
+        answer: "B", explain: `<p>格式檢查已經過了（不是 E001），是「資料不存在」，所以拋 <code>DataNotFoundException</code>。</p>
+<blockquote>規格的代碼表只有 0000 / E001 / 9999，沒寫 DataNotFoundException 要轉成哪個代碼，通常是框架統一攔下來處理。如果要寫測試案例，這點值得問清楚。</blockquote>` }
+    ],
+    note: `<ul><li>格式錯（空值、超長）→ <strong>E001</strong>，連資料庫都不碰</li><li>格式對但查無資料 → <strong>DataNotFoundException</strong></li><li>一切正常 → <strong>0000</strong></li></ul>`
+  }]
+},
+
+/* ---------------- 第 3 關 ---------------- */
+{ key: "3", name: "準備資料（查 7 張表）", intro: `
+<p>Q007 的第二步是去資料庫拿「食材」，每查完一張就放進 <code>dataMap</code>（一個大籃子，key 是表名、value 是查詢結果），後面所有組字邏輯都從這個籃子拿。</p>`,
+  sets: [{
+    heading: "七張表的查詢條件與查無資料的處理",
+    sub: "重點：哪些是「必備食材」、哪些是「可有可無的配料」",
+    passage: L("Q007 準備資料整理") + T(["#", "資料表", "條件", "查無資料"], [
+      ["1", "CLN_CASE_MAIN<br>案件受理檔", "APPLY_ID<br>（只 select BORROW_ID, BORROW_NAME）", "拋錯：無該件受理資料"],
+      ["2", "CLN_APPLY_MAIN<br>徵信核貸紀錄檔", "APPLY_ID、TYPE='C'", "拋錯：無該件徵信核貸紀錄"],
+      ["3", "CLN_APPLY_DETAIL<br>承作明細檔", "APPLY_ID、TYPE='C'<br>order by APPLY_FORM", "拋錯：無該件承作明細"],
+      ["4", "CLN_CUSTOMER_INFO<br>個人資料檔", "APPLY_ID", "拋錯：無該件個人資料檔"],
+      ["5", "CLN_APPLY_OTHER_COND<br>其他條件檔", "APPLY_ID、<strong>TYPE='B'</strong>、ITEM_KD='2'", "視為正常"],
+      ["6", "CLN_APPLY_RATE<br>階段利率檔", "APPLY_ID、TYPE='C'<br>JOIN APPLY_DETAIL", "視為正常"],
+      ["7", "CLN_APPLY_PENALTY<br>違約金檔", "APPLY_ID、TYPE='C'<br>order by BEG_TERM", "視為正常"]
+    ]) + L("CLN_APPLY_RATE 的查詢") + C(`
+select CAR.*, CAD.CURRENCY_CODE, CAD.CASE_LOW_RATE
+  from CLN_APPLY_RATE CAR
+  join CLN_APPLY_DETAIL CAD on CAR.APPLY_ID = CAD.APPLY_ID
+   and CAR.APPLY_FORM = CAD.APPLY_FORM
+   and CAR.TYPE = CAD.TYPE
+ where CAR.APPLY_ID = 上行.ApplyId and CAR.TYPE = 'C'
+order by CAR.APPLY_FORM, IS_WMA, BEG_TERM;`),
+    questions: [
+      { level: "★☆☆", text: "哪幾張表「查無資料」時要拋出 DataNotFoundException？",
+        options: ["7 張全部", "只有 CLN_CASE_MAIN", "CASE_MAIN、APPLY_MAIN、APPLY_DETAIL、CUSTOMER_INFO 這 4 張", "OTHER_COND、APPLY_RATE、APPLY_PENALTY 這 3 張"],
+        answer: "C", explain: `<p>前 4 張是「必備食材」：沒有案件、沒有核貸紀錄、沒有承作明細、沒有客戶資料，通知書根本寫不出來。</p><p>後 3 張是「配料」：一件貸款可以沒有其他條件、沒有違約金，所以查無資料視為正常。</p>` },
+      { level: "★★☆", text: "如果其他條件、利率、違約金三張表都查無資料，報表會怎樣？",
+        options: ["拋出 DataNotFoundException", "三個子報表都完全空白", "回傳 E001", "照常產出；但「其他條件」仍會印出第 1 條固定文字，「違約金」區也仍會印出 3 行固定說明"],
+        answer: "D", explain: `<p>這題要把第 3 關和第 7 關連起來看：</p>
+<ul><li><code>procOtherCond</code> 一開始就固定塞一筆「本行未收取承諾費者，有權視資金情況決定是否予以動支。」</li>
+<li><code>procApplyPenalty</code> 最後固定塞 3 行「貴戶於限制清償期間內提前清償本金者…」</li>
+<li>只有利率子報表會真的變成 0 筆。</li></ul>` },
+      { level: "★★☆", text: "七張表裡，哪一張的 TYPE 條件跟其他表不一樣？",
+        options: ["CLN_APPLY_OTHER_COND（TYPE='B'，另外還有 ITEM_KD='2'）", "CLN_APPLY_RATE", "CLN_APPLY_PENALTY", "CLN_APPLY_DETAIL"],
+        answer: "A", explain: `<p>其他帶 TYPE 的表都是 <code>TYPE = 'C'</code>，只有其他條件檔用 <code>TYPE = 'B'</code>，還多一個 <code>ITEM_KD = '2'</code>。</p>
+<blockquote>規格書沒解釋 B / C 代表什麼（可能是不同階段的核貸紀錄）。這種「只有一個不一樣」的地方，很可能是刻意設計，也可能是筆誤，看到時值得跟 SA 確認一下。</blockquote>` },
+      { level: "★★☆", text: "查 CLN_APPLY_RATE 時為什麼要 JOIN CLN_APPLY_DETAIL？",
+        options: ["要拿 CURRENCY_CODE（幣別）和 CASE_LOW_RATE（利率下限），給外幣放款利率那段組字用", "要拿借款人姓名", "只是為了排序", "確認明細存在，不存在就拋錯"],
+        answer: "A", explain: `<p>看 select：<code>CAR.*, CAD.CURRENCY_CODE, CAD.CASE_LOW_RATE</code>，多拿的就是這兩個欄位。</p><p>到了第 7 關你會看到，<code>BASE_CODE = "6"</code>（外幣放款利率）時要用幣別去查利率，還要印出「加減碼後利率不得低於 X%」。利率檔本身沒有這兩個欄位，只好跟明細檔借。</p>` },
+      { level: "★★★", text: "利率查詢 <code>order by APPLY_FORM, IS_WMA, BEG_TERM</code> 的效果是？",
+        options: ["依核貸金額由大到小排", "同一個方式（APPLY_FORM）的利率排在一起；同方式內先本身（IS_WMA='N'）再流用（'Y'）；最後依起始期數排", "依資料建立時間排", "先流用、再本身，最後依方式排"],
+        answer: "B", explain: `<p>ORDER BY 是由左到右的「多層排序」：先比 APPLY_FORM，一樣才比 IS_WMA，再一樣才比 BEG_TERM。字母順序 N 在 Y 前面，所以本身先、流用後。</p>
+<p>這個排序很關鍵：<code>procApplyRate</code> 靠「這一筆的 APPLY_FORM 跟上一筆一不一樣」來決定要不要印 (1)、(2) 流水號。順序亂掉，編號就會亂。</p>` }
+    ],
+    note: `<p>必備 4 張（查無就拋錯）＋ 配料 3 張（查無正常）。全部放進 <code>dataMap</code>，後面的組字都從這裡拿。</p>`
+  }]
+},
+
+/* ---------------- 第 4 關 ---------------- */
+{ key: "4", name: "產製檢核", intro: `
+<p>資料備齊後、開始組字之前，有一道「守門員」：<code>Rpt007Chk.check(dataMap)</code>。它不用 if 寫死，而是把條件丟給規則引擎（Validator）去比對規則 <code>DSA2F7</code>。</p>`,
+  sets: [{
+    heading: "Rpt007Chk：利率議價案件不產製",
+    sub: "Q007 處理邏輯第三步 + 第六步",
+    passage: L("承作條件通知書產製檢核") + C(`
+建立新的檢核 Map = checkMap
+String hasPricingType2 = "N"
+for (applyDetail : dataMap.CLN_APPLY_DETAIL) {
+  if (applyDetail.PRICING_TYPE == "2") {
+    hasPricingType2 = "Y";
+    break;
+  }
+}
+checkMap.put("HAS_PRICING_TYPE2", hasPricingType2);
+
+validator.executeRuleForMsg("DSA2F7", checkMap)
+取得回傳錯誤訊息字串 errMsg
+  若 errMsg 為空，繼續流程
+  若 errMsg 不為空，拋 Exception(errMsg)`) + L("規則 DSA2F7") + T(["檢核內容", "檢核訊息", "回傳方式"], [["HAS_PRICING_TYPE2 == Y", "利率議價案件，不產製承作條件通知書", "符合時，回傳訊息"]]),
+    questions: [
+      { level: "★☆☆", text: "什麼情況下「不產製」承作條件通知書？",
+        options: ["承作明細裡<strong>任一筆</strong> PRICING_TYPE = \"2\"（利率議價）", "承作明細<strong>全部</strong>都是 PRICING_TYPE = \"2\"", "核貸金額為 0", "沒有保證人"],
+        answer: "A", explain: `<p>迴圈裡只要碰到一筆 <code>PRICING_TYPE == "2"</code> 就設成 Y 並 <code>break</code>（提早離開迴圈）。所以是「有一筆就算」，不是「全部才算」。</p><p>比喻：一籃水果裡只要有一顆壞掉，整籃退貨。</p>` },
+      { level: "★★☆", text: "這個檢核放在流程的哪個位置？為什麼？",
+        options: ["檢查電文之前，因為越早擋越好", "準備資料之後、組報表資料之前，因為要先查到 CLN_APPLY_DETAIL 才知道 PRICING_TYPE", "產完 PDF 之後，再決定要不要回傳", "在 C007 裡，Q007 不負責檢核"],
+        answer: "B", explain: `<p>Q007 順序：一、檢查電文 → 二、準備資料 → <strong>三、報表產製前檢核</strong> → 四、取得報表資料。</p><p>判斷依據 PRICING_TYPE 在承作明細檔裡，所以一定要等資料查回來；但又要在花力氣組字之前擋掉，省得白做。</p>` },
+      { level: "★★☆", text: "檢核沒過時，系統會怎麼反應？",
+        options: ["回 0000，附一份空白報表", "回 E001", "略過那一筆利率議價的明細，其他照印", "拋出 Exception，訊息是「利率議價案件，不產製承作條件通知書」"],
+        answer: "D", explain: `<p>規則 <code>DSA2F7</code>「符合時回傳訊息」→ errMsg 不為空 → <code>拋 Exception(errMsg)</code>。整份都不產，不是只略過那一筆。</p>
+<p>為什麼用規則引擎？把「什麼情況要擋」寫在規則表裡，未來要加條件，改規則設定就好，不一定要改程式碼。</p>` }
+    ],
+    note: `<p>任一筆 <code>PRICING_TYPE = "2"</code> → <code>HAS_PRICING_TYPE2 = "Y"</code> → 規則 DSA2F7 命中 → 拋錯「利率議價案件，不產製承作條件通知書」。</p>`
+  }]
+},
+
+/* ---------------- 第 5 關 ---------------- */
+{ key: "5", name: "主報表欄位", intro: `
+<p>報表規格書用 ①～⑭ 標出每個黃色格子要放什麼。先學會「看圖找資料來源」：主報表的欄位從 <code>Params[0]</code> 拿，三個子報表從 <code>Lists[0]～[2]</code> 拿。</p>`,
+  sets: [{
+    heading: "看圖找資料來源",
+    sub: "LIP-C-CLNREPOTC007 承作條件通知書(報表)",
+    passage: `<figure class="fig"><img src="${REPORT_IMG}" alt="承作條件通知書版面，黃色格子標示 1 到 14 號欄位"><figcaption>報表版面（擷取自報表規格書）</figcaption></figure>`
+      + L("取得參數") + C(`
+Map  MainParams = Params.Params[0]
+List SubList1   = Lists[0]
+List SubList2   = Lists[1]
+List SubList3   = Lists[2]`)
+      + T(["編號", "內容", "來源"], [
+        ["①②③", "日期", "MainParams.RPT_DATE"], ["④", "方式", "MainParams.ACNT_CODE"], ["⑤", "金額", "MainParams.LOAN_AMT"],
+        ["⑥", "期限", "MainParams.LIMIT"], ["⑦", "利(費)率", "SubList2.SEQ, RATE（子報表 _2）"], ["⑧", "擔保品", "MainParams.ADDR_NO"],
+        ["⑨", "保證人", "MainParams.NAME"], ["⑩", "償還辦法", "MainParams.RETURN_TYPE"], ["⑪", "提前清償違約金", "SubList3.FORM（子報表 _3）"],
+        ["⑫", "費用", "MainParams.FEE_RVAMT"], ["⑬", "其他條件", "SubList1.SEQ, ITEM（子報表 _1）"], ["⑭", "台照", "MainParams.BORROW_NAME"]]),
+    questions: [
+      { level: "★☆☆", text: "報表上 ⑦「利(費)率」的資料從哪裡來？",
+        options: ["MainParams.RATE", "Lists[0]（SubList1）", "Lists[2]（SubList3）", "Lists[1]（SubList2）的 SEQ、RATE，由子報表 _2 印出"],
+        answer: "D", explain: `<p>利率會有好幾段（第 1 期起…、第 13 期起…），筆數不固定，所以走子報表。對照表：⑦ → <code>SubList2</code> → <code>Lists[1]</code> → 子報表 <code>_2</code>。</p>` },
+      { level: "★★☆", text: "<code>Lists[0]</code>（SubList1）對應的是報表上哪一區？",
+        options: ["⑦ 利(費)率", "⑪ 提前清償違約金", "⑬ 其他條件（子報表 _1）", "⑨ 保證人"],
+        answer: "C", explain: `<p>陷阱題！版面由上往下是 ⑦ 利率 → ⑪ 違約金 → ⑬ 其他條件，很容易以為 Lists[0] 是利率。</p>
+<p>但編號是照「子報表檔名」來的：<code>_1</code> = 其他條件、<code>_2</code> = 利率、<code>_3</code> = 違約金。Q007 組下行時也是 <code>{ subList_1, subList_2, subList_3 }</code>。</p>` }
+    ]
+  }, {
+    heading: "日期、費用、擔保品",
+    sub: "Q007「取得報表資料」前半段",
+    passage: L("日期與擔保品") + C(`
+String rptDate = 系統日轉完整民國年(例:中華民國115年10月1日);
+Param.put("RPT_DATE", rptDate);
+
+String gageType = dataMap.CLN_CASE_MAIN.GAGE_TYPE;
+String addrNo = ""; //擔保品
+if (gageType == "H" || gageType = "L") {
+  //ToDo 取得 建物,土地資訊
+} else if (gageType == "O") { //Other
+  //擔保品為其他,不需處理放空值
+} else {
+  addrNo = commCodeUtil.getAllComnCodes("GAGE_TYPE", gageType)
+                       .get(0).getCodeName();
+}
+Param.put("ADDR_NO", addrNo);`) + L("費用 FEE_RVAMT") + C(`
+DecimalFormat df = new DecimalFormat("#,##0");
+if (ACNT_FEE_RVAMT != 0)
+  sb.append("帳務管理費新台幣").append(df.format(ACNT_FEE_RVAMT)).append("元整");
+if (CREDIT_FEE_RVAMT != 0) {
+  if (sb.length() > 0) sb.append('、');
+  sb.append("徵信作業手續費新台幣").append(df.format(CREDIT_FEE_RVAMT)).append("元整");
+}
+if (COMP_FEE_RVAMT != 0) {
+  if (sb.length() > 0) sb.append('、');
+  sb.append("代償作業手續費新台幣").append(df.format(COMP_FEE_RVAMT)).append("元整");
+}
+if (sb.length() > 0) sb.append('。');
+Param.put("FEE_RVAMT", sb.toString());`),
+    questions: [
+      { level: "★☆☆", text: "系統日是 2026/10/27，RPT_DATE 會是？",
+        options: ["2026/10/27", "115/10/27", "中華民國115年10月27日", "民國 115 年"],
+        answer: "C", explain: `<p>規格寫「系統日轉<strong>完整</strong>民國年（例：中華民國115年10月1日）」。西元 − 1911 = 民國，2026 − 1911 = 115。</p><p>報表上 ①②③ 三格（年、月、日）都吃這同一個欄位。</p>` },
+      { level: "★★☆", text: "CLN_APPLY_MAIN 的帳務管理費 1000、徵信作業手續費 3000、代償作業手續費 0，FEE_RVAMT 是？",
+        options: ["徵信作業手續費新台幣3,000元整、帳務管理費新台幣1,000元整。", "帳務管理費新台幣1,000元整、徵信作業手續費新台幣3,000元整、代償作業手續費新台幣0元整。", "帳務管理費新台幣1,000元整、徵信作業手續費新台幣3,000元整", "帳務管理費新台幣1,000元整、徵信作業手續費新台幣3,000元整。"],
+        answer: "D", explain: `<ul><li>順序固定：帳務管理費 → 徵信作業手續費 → 代償作業手續費（雖然程式宣告變數時 CREDIT 寫在最前面，但 append 的順序是 ACNT 先）</li>
+<li>0 元的費用直接跳過，不會印「0元整」</li>
+<li>兩筆之間用「、」，最後有內容才補「。」</li>
+<li><code>#,##0</code> 會加千分位逗號：1000 → 1,000</li></ul>` },
+      { level: "★☆☆", text: "三種費用都是 0，FEE_RVAMT 會是？",
+        options: ["\"無\"", "\"0元\"", "空字串 \"\"", "\"。\""],
+        answer: "C", explain: `<p>三個 if 都不成立，sb 是空的；句號也只在 <code>sb.length() > 0</code> 才補，所以結果是空字串。報表 ⑫ 那格就是空白。</p><p>對比：保證人沒有時會印「無」（第 5 關下一組），兩個欄位的處理方式不一樣。</p>` },
+      { level: "★★☆", text: "擔保品類別 GAGE_TYPE = \"O\"（其他）時，ADDR_NO 是？",
+        options: ["用 GAGE_TYPE 去代碼表查中文名稱", "空值", "\"無\"", "建物地址"],
+        answer: "B", explain: `<p>規格：「擔保品為其他，不需處理放空值」。三條路：</p>
+<ul><li><code>H</code> 或 <code>L</code>（看起來是房屋、土地）→ 規格只寫了 <code>//ToDo</code>，<strong>還沒定義</strong>要怎麼取</li>
+<li><code>O</code> → 空值</li><li>其他 → 查 GAGE_TYPE 代碼表的中文名</li></ul>` }
+    ]
+  }, {
+    heading: "保證人與台照",
+    sub: "procCustomer：同一份客戶清單，分成兩堆",
+    passage: L("procCustomer") + C(`
+for (customer : customerInfoList) {
+  String NAME = customer.CUSTOMER_NAME;
+  // 一般保證人、連帶保證人
+  if ("1".equals(customer.GUAR_KIND) || "2".equals(customer.GUAR_KIND)) {
+    if (NAME 不是空白) { sb1 有內容就先加 "、"; sb1.append(NAME); }
+  }
+  // 借款人、共同借款人
+  if ("0".equals(customer.CUSTOMER_TYPE) || "3".equals(customer.GUAR_KIND)) {
+    if (NAME 不是空白) { sb2 有內容就先加 "、"; sb2.append(NAME); }
+  }
+}
+NAME        = sb1 有內容 ? sb1 : "無";
+BORROW_NAME = sb2 有內容 ? sb2 + "　台照" : "　　　　台照";`),
+    questions: [
+      { level: "★★☆", text: "客戶資料有三筆：王小明（CUSTOMER_TYPE=0）、李大華（GUAR_KIND=2）、陳美玲（GUAR_KIND=3）。輸出是？",
+        options: ["NAME = 李大華；BORROW_NAME = 王小明、陳美玲　台照", "NAME = 李大華、陳美玲；BORROW_NAME = 王小明　台照", "NAME = 無；BORROW_NAME = 王小明、李大華、陳美玲　台照", "NAME = 王小明；BORROW_NAME = 李大華、陳美玲　台照"],
+        answer: "A", explain: `<ul><li>GUAR_KIND 1、2 → 保證人堆（⑨）：李大華</li>
+<li>CUSTOMER_TYPE 0（借款人）或 GUAR_KIND 3（共同借款人）→ 台照堆（⑭）：王小明、陳美玲</li></ul>
+<p>「台照」是書信用語，意思是「請收件人察閱」。通知書是寫給借款人看的，所以台照前面放的是借款人和共同借款人，不是保證人。</p>` },
+      { level: "★☆☆", text: "這件貸款完全沒有保證人，報表 ⑨ 會印？",
+        options: ["空白", "null", "　台照", "無"],
+        answer: "D", explain: `<p><code>sb1.length() > 0</code> 不成立 → <code>Param.put("NAME", "無")</code>。</p><p>跟費用不一樣：費用沒有就留白，保證人沒有就寫「無」。</p>` }
+    ],
+    note: `<p>主報表欄位小結：日期轉完整民國年；費用 0 元跳過、全 0 留白；擔保品 O 留白、H/L 待定義；保證人沒有印「無」；台照放借款人＋共同借款人。</p>`
+  }]
+},
+
+/* ---------------- 第 6 關 ---------------- */
+{ key: "6", name: "方式・金額・期限・償還", intro: `
+<p><code>procApplyDetail</code> 一次處理 ④ 方式、⑤ 金額、⑥ 期限、⑩ 償還辦法。一件貸款可能有好幾個「方式」（例如方式一是房貸、方式二是理財型房貸），每個方式就是 CLN_APPLY_DETAIL 的一筆。</p>
+<p>關鍵小幫手 <code>appendStr</code>：負責「換行」和「加 (1)(2) 流水號」。</p>`,
+  sets: [{
+    heading: "appendStr 與方式・金額",
+    sub: "看懂這個小工具，後面所有多筆欄位都會讀了",
+    passage: L("appendStr：補斷行及流水號") + C(`
+void appendStr(indexMap, key, val, sb, isAppendBlank) {
+  if (val 是空白) return;
+  if (sb.length() > 0) {
+    換行;
+    if (isAppendBlank) sb.append("     ");
+  }
+  if (indexMap != null) {          // 需要串流水號
+    int index = indexMap.get(key) 預設 0;
+    sb.append("(").append(++index).append(")");
+    indexMap.put(key, index);
+  } else if (isAppendBlank) {
+    sb.append("   ");
+  }
+  sb.append(val);
+}`) + L("方式 ACNT_CODE") + C(`
+if ("3".equals(RETURN_TYPE))
+  sb.append(ACNT_CODE 代碼表查 applyDetail.ACNT_CODE_WMA);
+else
+  sb.append(ACNT_CODE 代碼表查 applyDetail.ACNT_CODE);
+if (isTrans)   // IS_TRANS = "1" 流用
+  sb.append("/流用").append(ACNT_CODE 代碼表查 ACNT_CODE_WMA);
+appendStr(indexMap, "ACNT_CODE", sb, sb_ACNT_CODE, false);`) + L("金額 LOAN_AMT 與循環註記 LOAN_AMT_TYPE") + C(`
+String[] RETURN_TYPE_A = { "1", "4", "6" };
+String[] RETURN_TYPE_B = { "2", "3", "5" };
+
+sb = "新台幣" + df.format(LOAN_AMT) + "元整";
+appendStr(indexMap, "LOAN_AMT", sb, sb_LOAN_AMT, false);
+
+if (RETURN_TYPE 在 A 組) sb = isTransSpace + "□得循環使用 ■不得循環使用";
+if (RETURN_TYPE 在 B 組) sb = isTransSpace + "■得循環使用 □不得循環使用";
+appendStr(null, "LOAN_AMT_TYPE", sb, sb_LOAN_AMT_TYPE, false);
+
+if (isTrans) {
+  sb = "　/新台幣" + TRANS_AMT + "元整，保留金額" + RESV_AMT + "元整(流用)";
+  appendStr(null, "LOAN_AMT", sb, sb_LOAN_AMT, false);
+  sb = isTransSpace + "■得循環使用 □不得循環使用";
+  appendStr(null, "LOAN_AMT_TYPE", sb, sb_LOAN_AMT_TYPE, false);
+}`),
+    questions: [
+      { level: "★★☆", text: "承作明細有兩筆：方式一 ACNT_CODE 查到「房屋貸款」、方式二查到「購置住宅貸款」，都不是流用。ACNT_CODE 欄位最後長怎樣？（↵ 代表換行）",
+        options: ["(1)房屋貸款↵(2)購置住宅貸款", "房屋貸款、購置住宅貸款", "(1)房屋貸款(2)購置住宅貸款", "↵(1)房屋貸款↵(2)購置住宅貸款"],
+        answer: "A", explain: `<p>跟著 appendStr 走一次：</p>
+<ul><li>第 1 筆：sb 是空的 → 不換行；indexMap 不是 null → 加 <code>(1)</code> → <code>(1)房屋貸款</code></li>
+<li>第 2 筆：sb 有內容 → <strong>先換行</strong>；index 變 2 → <code>(2)購置住宅貸款</code></li></ul>
+<p>所以「換行」永遠加在新項目的前面，第一項前面不會有空行，(D) 錯。</p>` },
+      { level: "★★☆", text: "流用那一行「　/新台幣…元整，保留金額…元整(流用)」為什麼沒有 (n) 流水號？",
+        options: ["因為呼叫 appendStr 時 indexMap 傳的是 null", "因為 isAppendBlank 是 false", "因為流用金額一定是 0", "規格書漏寫了"],
+        answer: "A", explain: `<p><code>appendStr(null, "LOAN_AMT", ...)</code>：第一個參數是 null → 走 else 分支 → 不加流水號，只換行接在後面。</p>
+<p>效果：流用金額會「掛」在同一個方式底下，看起來像附註，而不是一個新的項目。</p>
+<pre class="code">(1)新台幣5,000,000元整
+　/新台幣1,000,000元整，保留金額200,000元整(流用)</pre>` },
+      { level: "★☆☆", text: "某筆明細 RETURN_TYPE = \"2\"，LOAN_AMT_TYPE 會印？",
+        options: ["□得循環使用 ■不得循環使用", "■得循環使用 □不得循環使用", "■得循環使用 ■不得循環使用", "空白"],
+        answer: "B", explain: `<p>RETURN_TYPE 分兩組：</p><ul><li>A 組 {1, 4, 6} → 不得循環使用</li><li>B 組 {2, 3, 5} → <strong>得</strong>循環使用</li></ul><p>"2" 在 B 組。■ 是打勾、□ 是沒勾，就像紙本表單上的核取方塊。</p>` },
+      { level: "★★☆", text: "RETURN_TYPE = \"3\" 的明細，④「方式」用哪個欄位去查代碼表？",
+        options: ["ACNT_CODE_WMA", "ACNT_CODE", "RETURN_TYPE", "APPLY_FORM"],
+        answer: "A", explain: `<p>規格特別寫了：<code>if ("3".equals(RETURN_TYPE))</code> 用 <code>ACNT_CODE_WMA</code>，其他才用 <code>ACNT_CODE</code>。</p><p>另外，流用時接在「/流用」後面的科目名稱也是查 <code>ACNT_CODE_WMA</code>。規格的代碼表查詢都註明「無對應拋錯」，代碼表少設一筆就會整份失敗。</p>` }
+    ]
+  }, {
+    heading: "期限與償還方式",
+    sub: "月數轉「X 年 Y 個月」的規則",
+    passage: L("期限 LIMIT") + C(`
+if (LIMIT_END_DATE != null) {
+  eDate = LIMIT_END_DATE 轉民國年 (YYY/MM/DD, 例 116/09/05);
+  sb = eDate[0..3] + "年" + eDate[4..6] + "月" + eDate[7..9] + "日";
+} else {
+  int YY = 0, MM = 0;
+  if (LIMIT_MONTH >= 12) { YY = LIMIT_MONTH / 12; MM = LIMIT_MONTH % 12; }
+  else                   { MM = LIMIT_MONTH; }
+  if (MM != 0) sb = YY + "年" + MM + "個月";
+  else         sb = YY + "年";
+}
+appendStr(indexMap, "LIMIT", sb, sb_LIMIT, false);`) + L("償還方式 RETURN_TYPE") + C(`
+RETURN_TYPE_NM = RPT007_RETURN_TYPE 代碼表查 RETURN_TYPE;  //無對應拋錯
+if (FREE_PRINCIPAL_MONTH > 0) {        // 寬限期月數
+  換算 YY / MM（同上）
+  if (MM != 0) RETURN_TYPE_NM += "，寬限期" + YY + "年" + MM + "個月。";
+  else         RETURN_TYPE_NM += "，寬限期" + YY + "年。";
+} else {
+  RETURN_TYPE_NM += "。";
+}
+appendStr(indexMap, "RETURN_TYPE", RETURN_TYPE_NM, sb_RETURN_TYPE, false);`),
+    questions: [
+      { level: "★☆☆", text: "LIMIT_END_DATE 是空的，LIMIT_MONTH = 30，期限會印？",
+        options: ["30個月", "2.5年", "2年6個月", "3年"],
+        answer: "C", explain: `<p>30 ≥ 12 → YY = 30 / 12 = 2（整數除法，小數直接丟掉）、MM = 30 % 12 = 6（% 是取餘數）→ MM ≠ 0 → 「2年6個月」。</p><p>前面還會加流水號，所以實際是 <code>(1)2年6個月</code>。</p>` },
+      { level: "★★★", text: "LIMIT_MONTH = 6（不到一年），期限會印？",
+        options: ["6個月", "0年6個月", "半年", "0年"],
+        answer: "B", explain: `<p>6 &lt; 12 → YY 維持 0、MM = 6 → MM ≠ 0 → <code>YY + "年" + MM + "個月"</code> = <strong>「0年6個月」</strong>。</p>
+<p>程式沒有「YY = 0 就不印年」的判斷，所以會出現「0年」。這是照規格會跑出來的結果，但客戶看到可能覺得怪，是個好問題可以拿去問 SA。</p>` },
+      { level: "★★☆", text: "LIMIT_END_DATE = 2027/09/05，期限會印？",
+        options: ["2027年9月5日", "116/09/05", "116年09月05日", "中華民國116年9月5日"],
+        answer: "C", explain: `<p>先轉成民國 <code>116/09/05</code>，再用 substring 切三段拼上「年月日」。因為是直接切字串，月、日的前導 0 會保留 → 「116年09月05日」。</p><p>注意這跟 RPT_DATE 的格式（中華民國115年10月1日）不同。</p>` },
+      { level: "★★☆", text: "償還方式代碼名稱是「按月本息平均攤還」，FREE_PRINCIPAL_MONTH = 18，會印？",
+        options: ["按月本息平均攤還。", "按月本息平均攤還，寬限期18個月。", "按月本息平均攤還，寬限期1.5年。", "按月本息平均攤還，寬限期1年6個月。"],
+        answer: "D", explain: `<p>寬限期（只繳利息、不還本金的期間）18 個月 → YY = 1、MM = 6 → 「，寬限期1年6個月。」</p><p>沒有寬限期時只補一個「。」，所以 (A) 是 FREE_PRINCIPAL_MONTH = 0 的答案。</p>` }
+    ],
+    note: `<ul><li><strong>appendStr</strong>：第一項不換行；之後每項先換行；indexMap 不是 null 才加 (n)</li><li><strong>月數換算</strong>：/12 取年、%12 取月；月為 0 只印年；不滿 12 個月會出現「0年X個月」</li><li><strong>循環</strong>：{1,4,6} 不得、{2,3,5} 得</li></ul>`
+  }]
+},
+
+/* ---------------- 第 7 關 ---------------- */
+{ key: "7", name: "三個子報表", intro: `
+<p>三個會「往下長」的清單：其他條件（subList_1）、利(費)率（subList_2）、提前清償違約金（subList_3）。每一筆 Map 就是報表上的一行。</p>`,
+  sets: [{
+    heading: "其他條件 subList_1",
+    sub: "procOtherCond + formateOtherCond",
+    passage: C(`
+List<Map> subList = new ArrayList();
+int item_seq = 0;
+subList.add(formateOtherCond(++item_seq,
+  "本行未收取承諾費者，有權視資金情況決定是否予以動支。"));
+for (otherCond : otherCondList) {
+  subList.add(formateOtherCond(++item_seq, otherCond.OTHER_ITEM));
+}
+
+// formateOtherCond
+itemMap.put("SEQ",  item_seq + ". ");
+itemMap.put("ITEM", OTHER_ITEM);`),
+    questions: [
+      { level: "★★☆", text: "CLN_APPLY_OTHER_COND 查到 2 筆，subList_1 會有幾筆？第 1 筆的 SEQ 和 ITEM 是？",
+        options: ["2 筆；第 1 筆是資料庫的第一個條件，SEQ = \"1. \"", "3 筆；固定文字放在最後一筆", "3 筆；第 1 筆 SEQ = \"1. \"、ITEM = 本行未收取承諾費者，有權視資金情況決定是否予以動支。", "2 筆；固定文字只在查無資料時出現"],
+        answer: "C", explain: `<p>迴圈前就先塞了一筆固定文字，所以永遠是「1 筆固定 + N 筆資料」= 3 筆。資料庫的條件從「2. 」開始編號。</p><p>對照報表圖 ⑬：「1.本行未收取承諾費者…」是印好的，黃色格子在第 2 行，正好吻合。</p>` }
+    ]
+  }, {
+    heading: "利(費)率 subList_2",
+    sub: "procApplyRate：最長、也最容易出錯的一段",
+    passage: L("流水號與流用") + C(`
+DecimalFormat df = new DecimalFormat("###.####");
+for (applyRate : applyRateList) {
+  // 下一筆若 APPLY_FORM 相同則空白，不同才給流水號
+  if (lastKey == null || !lastKey.equals(APPLY_FORM))
+    subMap.put("SEQ", "(" + (++item_seq) + ")");
+  else
+    subMap.put("SEQ", "");
+
+  if (同 APPLY_FORM && IS_WMA == "Y") sb.append("/");
+  sb.append("第").append(BEG_TERM).append("期起按 ");`) + L("固定 or 機動") + C(`
+  if ("Y".equals(IS_FIX)) {
+    sb.append("固定年利率").append(df.format(LOAN_INTEREST)).append("%計收");
+  } else {
+    BASE_CODE 1/2/3 → baseRateValue = 從最新基準利率清單取值
+         1「本行定儲利率指數-月變動」
+         2「本行定儲利率指數-季變動」
+         3「中華郵政公司二年期定期儲金機動利率」
+    BASE_CODE 4 → baseRateValue = BASE_INTEREST，「按 美元TAIFX3(3M)」
+    BASE_CODE 5 → baseRateValue = BASE_INTEREST，「按 SHIBOR(3M)」
+    BASE_CODE 6 → 用幣別查最新利率（查無用 BASE_INTEREST），
+                  「按 本行" + 幣別名 + "外幣放款利率」
+    其他       → baseRateValue = "0"
+
+    // 機動，申貸利率一律以最新指標為主
+    LOAN_INTEREST = baseRateValue + I_VALUE;
+    I_VALUE >= 0 ? "加" : "減";
+    sb.append(df.format(I_VALUE.abs()) + "%(目前年利率"
+              + df.format(LOAN_INTEREST) + "%)計收");
+    if (BASE_CODE == "6")
+      sb.append("，加減碼後利率不得低於" + CASE_LOW_RATE + "%)");
+  }
+  if (同 APPLY_FORM && IS_WMA == "Y") sb.append("(流用)");
+  subMap.put("RATE", sb);
+  lastKey = APPLY_FORM;
+}`),
+    questions: [
+      { level: "★★☆", text: "排序後的利率資料有 3 筆：①方式 1、IS_WMA=N ②方式 1、IS_WMA=Y ③方式 2、IS_WMA=N。三筆的 SEQ 依序是？",
+        options: ["(1)、(2)、(3)", "(1)、空白、(2)", "(1)、(1)、(2)", "空白、(1)、(2)"],
+        answer: "B", explain: `<ul><li>① lastKey 是 null → <code>(1)</code></li><li>② 跟上一筆同為方式 1 → 空白；而且 IS_WMA = Y，RATE 前面會加「/」、後面加「(流用)」</li><li>③ 換成方式 2 → <code>(2)</code></li></ul>
+<p>效果是同一個方式的多段利率「縮排」在同一個編號底下，跟第 6 關的流用金額是同樣的排版概念。</p>` },
+      { level: "★★★", text: "BASE_CODE = \"1\"，最新月變動指數 1.72，I_VALUE = 0.5，BEG_TERM = 1，非固定。RATE 是？",
+        options: ["第1期起按 本行定儲利率指數-月變動加0.5%(目前年利率2.22%)計收", "第1期起按 固定年利率2.22%計收", "第1期起按 本行定儲利率指數-月變動加0.5%計收", "第1期起按 本行定儲利率指數-月變動加0.5%(目前年利率＝資料庫 LOAN_INTEREST)計收"],
+        answer: "A", explain: `<p>機動利率的註解寫「<strong>申貸利率一律以最新指標為主</strong>」：用「今天的」基準利率 1.72 + 加碼 0.5 = 2.22，<strong>不用</strong>資料庫存的 LOAN_INTEREST（那是當初申請時的值，可能已經過時）。</p>
+<p>比喻：浮動房貸就像「油價 + 固定服務費」，通知書上要寫今天的油價算出來的金額。</p>` },
+      { level: "★★☆", text: "I_VALUE = -0.25（減碼），文字會怎麼寫？",
+        options: ["加-0.25%", "減-0.25%", "減0.25%", "加0.25%"],
+        answer: "C", explain: `<p>I_VALUE &lt; 0 → 寫「減」；後面印的是 <code>I_VALUE.abs()</code>（絕對值）→ 0.25。所以是「減0.25%」，不會出現負號。</p>` },
+      { level: "★☆☆", text: "IS_FIX = \"Y\"（固定利率）時，利率數字從哪來？",
+        options: ["最新基準利率 + I_VALUE", "CASE_LOW_RATE", "固定寫 0", "直接用 CLN_APPLY_RATE.LOAN_INTEREST"],
+        answer: "D", explain: `<p>註解「固定，直接帶申貸利率」→ <code>固定年利率 + LOAN_INTEREST + %計收</code>。</p><p>固定利率不會跟著市場變，所以存在資料庫裡的值就是最終值；機動利率才需要重算。</p>` }
+    ]
+  }, {
+    heading: "提前清償違約金 subList_3",
+    sub: "procApplyPenalty：1 行方式 + N 行違約金 + 3 行固定文字",
+    passage: L("1. 方式") + C(`
+for (map : CLN_APPLY_DETAIL) {
+  if (map.HAS_PAYOFF == "1" && map.RETURN_TYPE != "5") {
+    第一個: "方式" + 中文數字(APPLY_FORM)
+    之後:   "、方式" + 中文數字(APPLY_FORM)
+  }
+}
+有內容就補 "："
+subList.add({ FORM: 上面的字串 });`) + L("2. 違約金文字") + C(`
+for (i = 0; i < 違約金筆數; i++) {
+  if (i == 0) sb = "於限制清償期間首日起算";
+  else        sb = "於限制清償期間首日起算" + BEG_TERM + "個月至";
+  if (END_TERM != null)
+    sb += (i == 0) ? END_TERM + "個月" : END_TERM + "個月期間";
+  sb += "內提前清償者，依每次償還本金之" + RENEGE_RATE + "%計付違約金。";
+  appendStr(indexMap, "RENEGE_A", sb, sb_RENEGE_A);   // 加 (n)
+  subList.add({ FORM: sb_RENEGE_A });
+}`) + L("3. 固定文字（3 行）") + C(`
+貴戶於限制清償期間內提前清償本金者，於　貴戶未有任何逾期違約繳款紀錄…
+塗銷(清償)證明或拋棄證明或其他足使抵押權塗銷或消滅之文件者…
+戶於限制清償期間內請求本行出具前開文件者，即需一次付清…`),
+    questions: [
+      { level: "★★☆", text: "承作明細：方式 1（HAS_PAYOFF=1、RETURN_TYPE=1）、方式 2（HAS_PAYOFF=1、RETURN_TYPE=5）、方式 3（HAS_PAYOFF=1、RETURN_TYPE=2）。subList_3 第一行 FORM 是？",
+        options: ["方式一、方式二、方式三：", "方式一、方式三：", "方式一、方式三", "方式二："],
+        answer: "B", explain: `<p>條件是「有提前清償限制（HAS_PAYOFF=1）<strong>且</strong> RETURN_TYPE 不是 5」。方式 2 的 RETURN_TYPE=5 被排除。</p><p><code>numToChinese</code> 把 1 轉成「一」，最後有內容才補全形冒號「：」。</p>` },
+      { level: "★★☆", text: "違約金檔有 2 筆，subList_3 總共有幾筆？",
+        options: ["2 筆", "3 筆", "5 筆", "6 筆"],
+        answer: "D", explain: `<p>1（方式那行）+ 2（每筆違約金一行）+ 3（固定文字三行）= <strong>6 筆</strong>。</p><p>固定文字被硬切成三行，是因為報表上一行放得下的字數有限，所以規格直接照版面寬度斷好了。</p>` },
+      { level: "★★★", text: "第 2 筆違約金：BEG_TERM = 13、END_TERM = 24、RENEGE_RATE = 0.5。這一行 FORM 是？",
+        options: ["(2)於限制清償期間首日起算13個月至24個月期間內提前清償者，依每次償還本金之0.5%計付違約金。", "(2)於限制清償期間首日起算24個月內提前清償者，依每次償還本金之0.5%計付違約金。", "於限制清償期間首日起算13個月至24個月期間內提前清償者，依每次償還本金之0.5%計付違約金。", "(1)於限制清償期間首日起算13個月至24個月期間內提前清償者，依每次償還本金之0.5%計付違約金。"],
+        answer: "A", explain: `<ul><li>i = 1（不是第一筆）→ 用「起算 13 個月至」開頭、END 後面接「個月期間」</li>
+<li>(B) 是第一筆的句型：第一筆不印 BEG_TERM，只寫「起算 X 個月內」</li>
+<li>流水號：sb_RENEGE_A 每輪都清空，所以不會換行；但 indexMap 一直累加，第二筆是 (2)</li></ul>
+<p>對照報表圖：「2.於限制清償期間首日起算__個月至__個月期間內…」完全一樣的句型。</p>` }
+    ],
+    note: `<ul><li><strong>其他條件</strong>：固定第 1 條 + 資料庫條件</li><li><strong>利率</strong>：換方式才給 (n)；同方式的流用加「/」和「(流用)」；機動利率用最新指標重算</li><li><strong>違約金</strong>：1 行方式 + N 行違約金 + 3 行固定文字</li></ul>`
+  }]
+},
+
+/* ---------------- 第 8 關 ---------------- */
+{ key: "8", name: "抓蟲：規格書疑點", intro: `
+<p>讀規格書最有價值的能力之一，是發現「前後對不上」的地方。這一關的每一題都是規格書裡實際寫到的內容，請找出會造成問題的那一個。</p>
+<p>找到後可以整理成清單，開發前跟 SA 確認，省得寫完才發現。</p>`,
+  sets: [{
+    heading: "資料準備與組下行",
+    sub: "這些都是 Q007 規格書原文",
+    passage: L("A. 查案件受理檔") + C(`
+select BORROW_ID, BORROW_NAME
+  from CLN_CASE_MAIN
+ where APPLY_ID = 上行.ApplyId
+...
+String gageType = dataMap.CLN_CASE_MAIN.GAGE_TYPE;`) + L("B. 放進 dataMap 的 key") + C(`
+dataMap.put("CLN_CUSTOMRT_INFO", 查詢結果)
+dataMap.put("CLN_APPLY_PENALTY ", 查詢結果)   // 注意引號內
+...
+procCustomer(Param, dataMap.CLN_CUSTOMER_INFO);
+List renegeList_A = dataMap.CLN_APPLY_PENALTY;`) + L("C. 組成下行") + C(`
+Map[]  Params = new Map[]  { @Param, @Param1, @Param2, @Param2 }
+List[] lists  = new List[] { subList_1, subList_2, subList_3 }`) + L("D. SysId") + C(`
+Param.put("SysId", sysId);
+...
+String sysID = "CLN";`),
+    questions: [
+      { level: "BUG", text: "片段 A：CLN_CASE_MAIN 的查詢有什麼問題？",
+        options: ["只 select 了 BORROW_ID、BORROW_NAME，後面卻要用 GAGE_TYPE（擔保品類別），會拿不到值", "沒有 order by", "應該加 TYPE = 'C'", "BORROW_NAME 應該從 CUSTOMER_INFO 拿"],
+        answer: "A", explain: `<p>SQL 只撈了兩個欄位，但「取得報表資料」那段用 <code>dataMap.CLN_CASE_MAIN.GAGE_TYPE</code> 判斷擔保品。照規格寫，GAGE_TYPE 永遠是 null → 會走到最後的 else 去查代碼表 → 很可能「無對應拋錯」。</p><p>修法：select 補上 GAGE_TYPE。</p>` },
+      { level: "BUG", text: "片段 B：放進 dataMap 的 key，哪個問題最可能讓報表「少一整區」？",
+        options: ["CLN_CUSTOMRT_INFO 拼錯", "兩者都不會造成問題", "\"CLN_APPLY_PENALTY \" 引號裡多了一個空白，之後用 CLN_APPLY_PENALTY 取會拿到 null，違約金那幾行全部消失", "key 應該用小寫"],
+        answer: "C", explain: `<p>兩個都是 key 對不上的問題（放進去的名字和拿出來的名字不同），但後果不一樣：</p>
+<ul><li><strong>多一個空白</strong>：<code>renegeList_A</code> 是 null，程式有 <code>if (renegeList_A != null)</code> 擋著，不會報錯，但違約金行就<strong>默默消失</strong>，最難發現。</li>
+<li><strong>CUSTOMRT 拼錯</strong>：拿到 null 後直接跑 for 迴圈，比較可能直接 NullPointerException，反而容易發現。</li></ul>
+<p>兩個都該修，但「不報錯卻少資料」的蟲最危險。</p>` },
+      { level: "BUG", text: "片段 C：組成下行的 Params 陣列有什麼問題？",
+        options: ["應該用 List 不是陣列", "lists 順序應該是 3、2、1", "Params 應該只放 @Param", "@Param2 出現兩次、@Param3 沒放進去，子報表 _3（違約金）拿不到自己的 REPORT_ID"],
+        answer: "D", explain: `<p>前面明明建了 <code>Param3.put("REPORT_ID", reportId + "_3")</code>，組陣列時卻寫成兩個 <code>@Param2</code>。這種複製貼上時忘了改數字的錯誤非常常見。</p>` },
+      { level: "BUG", text: "片段 D：SysId 的寫法有什麼問題？",
+        options: ["CLN 應該是 LIP", "SysId 不需要放進 Param", "先用了 sysId，後面才宣告 sysID = \"CLN\"；而且大小寫不同（sysId vs sysID），在 Java 裡是兩個不同的變數", "沒有問題"],
+        answer: "C", explain: `<p>Java 的變數名稱分大小寫，<code>sysId</code> 和 <code>sysID</code> 是兩個東西；而且變數要先宣告才能用。照字面寫會編譯失敗。</p><p>規格書的意圖很明顯是 <code>SysId = "CLN"</code>，實作時把宣告移到前面、名稱統一即可。</p>` }
+    ]
+  }, {
+    heading: "組字邏輯裡的小地雷",
+    sub: "這些會讓印出來的字怪怪的",
+    passage: L("E. 流用期限") + C(`
+if (isTrans) {
+  int TRANS_MONTH = applyDetail.TRANS_MONTH;
+  int YY = 0, MM = 0;
+  if (LIMIT_MONTH >= 12) {          // ← 注意這行
+    YY = TRANS_MONTH / 12;
+    MM = TRANS_MONTH % 12;
+  } else {
+    MM = TRANS_MONTH;
+  }
+  ...append("/" + YY + "年" + MM + "個月(流用)")
+}`) + L("F. 利率文字") + C(`
+sb.append("第").append(BEG_TERM).append("期起按 ");
+...
+} else if ("4".equals(baseCode)) {
+    sb.append("按 美元TAIFX3(3M)");
+...
+if ("6".equals(baseCode))
+    sb.append("，加減碼後利率不得低於" + CASE_LOW_RATE + "%)");`) + L("G. 下行規格 vs 範例") + T(["下行規格表", "下行 JSON 範例"], [["Param", "Params"], ["RPT_DATE", "RPT_DAT"], ["組成下行表：CUSTOMER_NAME", "程式放的是 BORROW_NAME"]]),
+    questions: [
+      { level: "BUG", text: "片段 E：LIMIT_MONTH = 6、TRANS_MONTH = 18，流用期限會印出什麼？",
+        options: ["/1年6個月(流用)", "/0年18個月(流用)", "/18個月(流用)", "/0年6個月(流用)"],
+        answer: "B", explain: `<p>判斷條件寫成 <code>LIMIT_MONTH >= 12</code>，但換算的是 TRANS_MONTH。LIMIT_MONTH = 6 → 走 else → MM = 18 → 「/0年18個月(流用)」。</p><p>應該改成 <code>if (TRANS_MONTH >= 12)</code>。又是一個複製貼上上一段程式碼、只改了一半的例子。</p>` },
+      { level: "BUG", text: "片段 F：BASE_CODE = \"4\"、I_VALUE = 0.3、BASE_INTEREST = 4.5 的利率文字會是？",
+        options: ["第1期起按 美元TAIFX3(3M)加0.3%(目前年利率4.8%)計收", "第1期起按 按 美元TAIFX3(3M)加0.3%(目前年利率4.8%)計收", "第1期起按 美元TAIFX3(3M)加0.3%計收", "第1期起按 按 美元TAIFX3(3M)加0.3%(目前年利率4.8%)計收)"],
+        answer: "B", explain: `<p>前面已經 append 了「期起按 」，代碼 4、5、6 又各自 append「按 …」，所以會出現<strong>「按 按」</strong>。代碼 1、2、3 沒有這個問題。</p>
+<p>另外 BASE_CODE = 6 的結尾多了一個「)」：「(目前年利率X%)計收，加減碼後利率不得低於Y%<strong>)</strong>」，括號沒成對。</p>` },
+      { level: "★★☆", text: "片段 G：以下哪一個說法「正確」？",
+        options: ["範例寫 RPT_DAT 沒關係，jrxml 會自動對應", "規格表、範例、組成下行表三處的欄位名稱完全一致", "jrxml 用的是 RPT_DATE，如果實作照範例寫成 RPT_DAT，報表上的日期會是空白", "CUSTOMER_NAME 才是報表 ⑭ 用的欄位"],
+        answer: "C", explain: `<p>報表規格書寫 ①②③ 用 <code>MainParams.RPT_DATE</code>、⑭ 用 <code>MainParams.BORROW_NAME</code>。jrxml 是照名字「對號入座」，名字差一個字就對不上，那格就空白。</p>
+<p>遇到規格表、範例、程式三方不一致時，<strong>以「最終使用方」（這裡是 jrxml）需要的名字為準</strong>，再回頭請 SA 更正文件。</p>` }
+    ],
+    note: `<p>這份規格書的疑點清單（可以直接拿去問 SA）：</p>
+<ul><li>CLN_CASE_MAIN 沒 select GAGE_TYPE</li><li>dataMap key：CLN_CUSTOMRT_INFO 拼錯、"CLN_APPLY_PENALTY " 多空白</li>
+<li>Params 陣列 Param2 重複、缺 Param3</li><li>sysId / sysID 先用後宣告、大小寫不一</li>
+<li>流用期限判斷用了 LIMIT_MONTH，應為 TRANS_MONTH</li><li>利率代碼 4/5/6「按 按」重複；代碼 6 多一個「)」</li>
+<li>下行範例 RPT_DAT、Param/Params、CUSTOMER_NAME 名稱不一致</li>
+<li>其他：procApplyRate 用了 <code>GATE_TYPE</code>（應為 GAGE_TYPE）；IS_TRANS 判斷寫成 <code>applyDetailList.IS_TRANS</code>（應為 applyDetail）；GAGE_TYPE 為 H/L 的擔保品邏輯還是 ToDo；Java 字串比較應用 <code>.equals()</code> 而不是 <code>==</code></li></ul>`
+  }]
+}
+  ]
+}];
+
+/* ---------- 題目編號、題組 id ---------- */
+EXAMS.forEach(ex => {
+  let n = 0, s = 0;
+  ex.parts.forEach(p => p.sets.forEach(set => {
+    set.id = "s" + (++s); set.part = p.key;
+    set.questions.forEach(q => { q.num = String(++n); });
+  }));
+  ex.partKeys = ex.parts.map(p => p.key);
+  ex.sets = ex.parts.flatMap(p => p.sets);
+});
+
+/* ---------- 像素楓葉（11x11 點陣） ---------- */
+const LEAF = [".....O.....", "....OOO....", ".O..OVO..O.", ".OO.OVO.OO.", "..OOOVOOO..", "OOOOOVOOOOO",
+              ".OOOOVOOOO.", "..OOOVOOO..", "...OOVOO...", ".....S.....", ".....S....."];
+function leafSVG(cls = "") {
+  const color = { O: "#f5821f", V: "#d0500e", S: "#8a4a1a" };
+  let rects = "";
+  LEAF.forEach((row, y) => [...row].forEach((c, x) => { if (color[c]) rects += `<rect x="${x}" y="${y}" width="1" height="1" fill="${color[c]}"/>`; }));
+  return `<svg class="leaf ${cls}" viewBox="0 0 11 11" aria-hidden="true">${rects}</svg>`;
+}
+const LEAF_URI = "data:image/svg+xml," + encodeURIComponent(leafSVG().replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"'));
+document.documentElement.style.setProperty("--leaf", `url("${LEAF_URI}")`);
+const LEAF_SM = '<i class="lf"></i>';
+
+/* ---------- 作答紀錄（每份規格各自存在瀏覽器） ---------- */
+const PREFIX = "sasd-quiz-";
+const load = k => { try { const v = localStorage.getItem(k); return v === null ? null : JSON.parse(v); } catch (e) { return null; } };
+const store = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+const getExam = id => EXAMS.find(e => e.id === id);
+const LETTERS = ["A", "B", "C", "D"];
+
+function stats(id, st) {
+  const ex = getExam(id);
+  st = st || load(PREFIX + id) || {};
+  const blank = () => ({ right: 0, done: 0, total: 0 });
+  const all = blank(), parts = {};
+  for (const s of ex.sets) {
+    const p = parts[s.part] || (parts[s.part] = blank());
+    const x = st[s.id];
+    for (const q of s.questions) {
+      all.total++; p.total++;
+      if (x && x.done) { all.done++; p.done++; if (x.picks[q.num] === q.answer) { all.right++; p.right++; } }
+    }
+  }
+  return { ...all, parts };
+}
+
+/* ---------- 畫面 ---------- */
+const $ = s => document.querySelector(s);
+let examId, exam, state, curPart;
+const opened = new Set();
+const st = id => state[id] || (state[id] = { picks: {}, done: false });
+const save = () => store(PREFIX + examId, state);
+const partOf = key => exam.parts.find(p => p.key === key);
+
+function go(id, part) {
+  if (id !== examId) { examId = id; exam = getExam(id); state = load(PREFIX + id) || {}; store(PREFIX + "current", id); }
+  if (!part) { const saved = String(load(PREFIX + id + "-tab")); part = exam.partKeys.includes(saved) ? saved : exam.partKeys[0]; }
+  curPart = part; store(PREFIX + id + "-tab", part);
+  opened.add(id);
+  $("#subtitle").textContent = `${exam.title}・第 ${curPart} 關 ${partOf(curPart).name}`;
+  renderMain();
+  if (isNarrow()) setSide(false);
+  scrollTo({ top: 0 });
+}
+
+function renderSide() {
+  const box = $("#exams"), keep = box.scrollTop;
+  box.innerHTML = EXAMS.map(ex => {
+    const id = ex.id, s = id === examId ? stats(id, state) : stats(id);
+    const parts = ex.parts.map(p => {
+      const ps = s.parts[p.key] || { done: 0, total: 0 };
+      const active = id === examId && p.key === curPart;
+      return `<button class="part ${active ? "active" : ""} ${ps.done === ps.total ? "done" : ""}" data-exam="${id}" data-p="${p.key}">
+        <span class="pn">第 ${p.key} 關</span><span class="pname">${esc(p.name)}</span><small>${ps.done === ps.total ? "✔ " : ""}${ps.done}/${ps.total}</small></button>`;
+    }).join("");
+    return `<div class="group ${opened.has(id) ? "open" : ""} ${id === examId ? "current" : ""}">
+      <button class="exam" data-toggle="${id}"><span class="caret">▶</span><i class="lf ${s.done === s.total ? "" : "off"}"></i><span>${esc(ex.title)}</span><small>${s.done}/${s.total}</small></button>
+      <div class="parts">${parts}</div></div>`;
+  }).join("");
+  box.scrollTop = keep;
+}
+
+function renderScore() {
+  const { right, done, total } = stats(examId, state);
+  const pct = done ? Math.round(right / done * 100) : 100;
+  $("#hpFill").style.width = pct + "%";
+  $("#hpText").textContent = done ? pct + "%" : "—";
+  $("#expFill").style.width = (done / total * 100) + "%";
+  $("#expText").textContent = `${done}/${total}`;
+  // 等級：所有規格累計答對題數，每 10 題升 1 級
+  const allRight = EXAMS.reduce((n, ex) => n + (ex.id === examId ? right : stats(ex.id).right), 0);
+  $("#lv").textContent = "Lv." + (1 + Math.floor(allRight / 10));
+  renderSide();
+}
+
+function questionHTML(set, q) {
+  const x = st(set.id), pick = x.picks[q.num];
+  const opts = q.options.map((text, i) => {
+    const key = LETTERS[i];
+    let cls = "opt", tag = "";
+    if (x.done) {
+      if (key === q.answer) { cls += " right"; tag = key === pick ? "🍁 答對" : "正解"; }
+      else if (key === pick) { cls += " wrong"; tag = "你的答案"; }
+    } else if (key === pick) cls += " sel";
+    return `<button class="${cls}" data-set="${set.id}" data-q="${q.num}" data-k="${key}" ${x.done ? "disabled" : ""}>
+      <span class="cur">${LEAF_SM}</span><span class="l">(${key})</span><span class="txt">${text}</span>${tag ? `<span class="tag">${tag}</span>` : ""}</button>`;
+  }).join("");
+  let after = "";
+  if (x.done) {
+    const ok = pick === q.answer;
+    const msg = ok ? "答對了！" : pick ? `答錯了，你選了 (${pick})` : "沒有作答";
+    after = `<div class="verdict ${ok ? "ok" : "bad"}"><span class="big">${ok ? "LEVEL UP!" : "MISS"}</span><span>${msg}・正確答案 (${q.answer})</span></div>
+      <div class="explain">${q.explain}</div>`;
+  }
+  const lv = q.level === "BUG" ? '<span class="lvtag bug">抓蟲</span>' : `<span class="lvtag">難度 ${q.level}</span>`;
+  return `<div class="q"><div class="qtext"><span class="qnum">${q.num}.</span>${lv} ${q.text}</div>
+    <div class="opts">${opts}</div>${after}</div>`;
+}
+
+function setHTML(set) {
+  const x = st(set.id);
+  const unanswered = set.questions.filter(q => !x.picks[q.num]).length;
+  const passages = set.passage ? `<div class="passages">${set.passage}</div>` : "";
+  const reveal = x.done && set.note ? `<details class="reveal" open><summary>重點整理</summary>${set.note}</details>` : "";
+  const nums = set.questions.map(q => q.num);
+  const title = `${LEAF_SM}${nums.length > 1 ? `第 ${nums[0]}–${nums[nums.length - 1]} 題` : `第 ${nums[0]} 題`}${x.done ? "・已完成" : ""}`;
+  const head = `<p class="set-title">${esc(set.heading)}</p><p class="set-sub">${esc(set.sub || "")}</p>`;
+  const right = set.questions.filter(q => x.picks[q.num] === q.answer).length;
+  const perfect = right === set.questions.length;
+  const actions = x.done
+    ? `<div class="actions"><span class="result ${perfect ? "perfect" : ""}">${perfect ? "🍁 全部答對！" : "本組答對"} ${right} / ${set.questions.length}</span>
+       <button class="go plain" data-redo="${set.id}">重做這組</button></div>`
+    : `<div class="actions"><button class="go" data-submit="${set.id}" ${unanswered ? "disabled" : ""}>送出本題組</button>
+       ${unanswered && set.questions.length > 1 ? `<span class="hint">還有 ${unanswered} 題沒選</span>` : ""}</div>`;
+  return `<section class="card win" id="${set.id}"><div class="win-title">${title}</div><div class="win-body">${head}
+    <div class="set-body ${passages ? "two" : ""}">${passages}<div>${set.questions.map(q => questionHTML(set, q)).join("")}${actions}</div></div>
+    ${reveal}</div></section>`;
+}
+
+function renderSet(id) {
+  const top = document.getElementById(id).getBoundingClientRect().top;
+  document.getElementById(id).outerHTML = setHTML(exam.sets.find(s => s.id === id));
+  scrollBy(0, document.getElementById(id).getBoundingClientRect().top - top);
+  renderScore();
+}
+
+function pickOption(setId, num, key) {
+  st(setId).picks[num] = key; save();
+  const sec = document.getElementById(setId);
+  sec.querySelectorAll(`.opt[data-q="${num}"]`).forEach(b => b.classList.toggle("sel", b.dataset.k === key));
+  const fresh = document.createElement("div");
+  fresh.innerHTML = setHTML(exam.sets.find(s => s.id === setId));
+  sec.querySelector(".actions").replaceWith(fresh.querySelector(".actions"));
+}
+
+function pagerHTML() {
+  const i = exam.partKeys.indexOf(curPart), j = EXAMS.indexOf(exam);
+  if (i < exam.partKeys.length - 1) { const nx = exam.parts[i + 1]; return `<div class="pager"><button class="go" data-go="${examId}" data-p="${nx.key}">前往第 ${nx.key} 關：${esc(nx.name)} →</button></div>`; }
+  if (j < EXAMS.length - 1) return `<div class="pager"><button class="go" data-go="${EXAMS[j + 1].id}">前往 ${esc(EXAMS[j + 1].title)} →</button></div>`;
+  return "";
+}
+
+function renderMain() {
+  const p = partOf(curPart);
+  $("#main").innerHTML = `<section class="intro win"><div class="win-title">${LEAF_SM}${esc(exam.title)}・第 ${p.key} 關・${esc(p.name)}</div><div class="win-body">${p.intro}</div></section>`
+    + p.sets.map(setHTML).join("") + pagerHTML();
+  renderScore();
+}
+
+/* ---------- 互動 ---------- */
+$("#exams").addEventListener("click", e => {
+  const t = e.target.closest("[data-toggle]");
+  if (t) { const id = t.dataset.toggle; opened.has(id) ? opened.delete(id) : opened.add(id); renderSide(); return; }
+  const b = e.target.closest("[data-p]");
+  if (b) go(b.dataset.exam, b.dataset.p);
+});
+$("#main").addEventListener("click", e => {
+  const opt = e.target.closest(".opt");
+  if (opt && !opt.disabled) { pickOption(opt.dataset.set, opt.dataset.q, opt.dataset.k); return; }
+  const sub = e.target.closest("[data-submit]");
+  if (sub && !sub.disabled) { st(sub.dataset.submit).done = true; save(); renderSet(sub.dataset.submit); return; }
+  const nx = e.target.closest("[data-go]");
+  if (nx) { go(nx.dataset.go, nx.dataset.p); return; }
+  const redo = e.target.closest("[data-redo]");
+  if (redo) { state[redo.dataset.redo] = { picks: {}, done: false }; save(); renderSet(redo.dataset.redo); }
+});
+$("#resetAll").onclick = () => {
+  if (!confirm(`確定要清除「${exam.title}」的所有作答紀錄？`)) return;
+  state = {}; save(); renderMain();
+};
+
+const isNarrow = () => matchMedia("(max-width: 899px)").matches;
+function setSide(open) {
+  if (isNarrow()) document.body.classList.toggle("side-open", open);
+  else { document.body.classList.toggle("side-closed", !open); store(PREFIX + "side", open); }
+}
+const sideIsOpen = () => isNarrow() ? document.body.classList.contains("side-open") : !document.body.classList.contains("side-closed");
+$("#menuBtn").onclick = $("#fab").onclick = () => setSide(!sideIsOpen());
+$("#sideClose").onclick = $("#backdrop").onclick = () => setSide(false);
+document.body.classList.toggle("side-closed", load(PREFIX + "side") === false);
+
+const measure = () => {
+  const h = getComputedStyle($("header")).position === "sticky" ? $("header").offsetHeight : 0;
+  document.documentElement.style.setProperty("--hh", h + "px");
+};
+addEventListener("resize", measure);
+
+$("#logoLeaf").innerHTML = leafSVG();
+go(getExam(load(PREFIX + "current")) ? load(PREFIX + "current") : EXAMS[0].id);
+measure();
+</script>
+</body>
+</html>
